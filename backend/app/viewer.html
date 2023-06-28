@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat</title>
+    <script src='https://unpkg.com/maplibre-gl@3.1.0/dist/maplibre-gl.js'></script>
+    <link href='https://unpkg.com/maplibre-gl@3.1.0/dist/maplibre-gl.css' rel='stylesheet'/>
+</head>
+<body>
+<h1>WebSocket Chat</h1>
+<h2>Your ID: <span id="ws-id"></span></h2>
+
+<form action="" onsubmit="sendMessage(event)">
+    <input type="text" id="messageText" autocomplete="off"/>
+    <button>Send my location</button>
+</form>
+
+
+<ul id='messages'>
+</ul>
+
+
+<div id='map' style='width: 800px; height: 800px;'></div>
+
+<script>
+    var client_id = Date.now();
+
+    document.querySelector("#ws-id").textContent = client_id;
+    var ws = new WebSocket(`ws://localhost:8000/ws/${client_id}`);
+    ws.onmessage = function (event) {
+        var messages = document.getElementById('messages')
+        var message = document.createElement('li')
+
+        var msg_received = document.createTextNode(JSON.parse(event.data).message);
+
+        message.appendChild(msg_received)
+        messages.appendChild(message)
+
+        var marker = new maplibregl.Marker()
+            .setLngLat(JSON.parse(event.data).coordinate.split(','))
+            .addTo(map);
+
+        // for (var i = 0; i < coordinates.length; i++) {
+        //     var marker = new maplibregl.Marker()
+        //         .setLngLat(coordinates[i].split(','))
+        //         .addTo(map);
+        // }
+
+    };
+
+    function sendMessage(event) {
+        var input = document.getElementById("messageText")
+        ws.send(input.value)
+        input.value = ''
+        event.preventDefault()
+    }
+
+    const map = new maplibregl.Map({
+        container: 'map',
+        style: {
+            "version": 8,
+            "sources": {
+                "osm": {
+                    "type": "raster",
+                    "tiles": ["https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"],
+                    "tileSize": 256,
+                    "attribution": "&copy; OpenStreetMap Contributors",
+                    "maxzoom": 19
+                }
+            },
+            "layers": [
+                {
+                    "id": "osm",
+                    "type": "raster",
+                    "source": "osm" // This must match the source key above
+                }
+            ]
+        },
+        center: [141.34867329542533, 43.0598172943666], // starting position [lng, lat]
+        zoom: 7 // starting zoom
+    });
+
+    map.addControl(new maplibregl.NavigationControl());
+
+    // var marker = new maplibregl.Marker()
+    //     .setLngLat([141.34867329542533, 43.0598172943666])
+    //     .addTo(map);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "03-fastapi-simple"
+version = "0.1.0"
+description = ""
+authors = ["MIERUNE Inc. <noreply@mierune.co.jp>"]
+readme = "README.md"
+packages = [{include = "my_app", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fastapi = {extras = ["all"], version = "^0.95.0"}
+uvicorn = "^0.15.0"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.0.261"
+black = "^23.3.0"
+pytest = "^7.3.0"
+pytest-cov = "^4.0.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest]
+pythonpath = "src"
+addopts = ["--import-mode=importlib"]
+
+[tool.ruff]
+select = ["F", "E", "W", "B", "N", "UP", "C4", "C90", "DTZ", "PD", "PIE", "PT", "Q", "SIM", "RUF"]
+ignore = ["E501"]
+target-version = "py310"
+
+[tool.pyright]
+typeCheckingMode = "basic"
+executionEnvironments = [
+    { root = "tests", extraPaths = ["src"] },
+]
