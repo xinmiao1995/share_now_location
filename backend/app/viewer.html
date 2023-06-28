@@ -4,8 +4,31 @@
     <title>Chat</title>
     <script src='https://unpkg.com/maplibre-gl@3.1.0/dist/maplibre-gl.js'></script>
     <link href='https://unpkg.com/maplibre-gl@3.1.0/dist/maplibre-gl.css' rel='stylesheet'/>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 25%;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
 </head>
 <body>
+<style>
+    .marker {
+        display: block;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        padding: 0;
+    }
+</style>
+
 <h1>WebSocket Chat</h1>
 <h2>Your ID: <span id="ws-id"></span></h2>
 
@@ -18,42 +41,9 @@
 <ul id='messages'>
 </ul>
 
-
-<div id='map' style='width: 800px; height: 800px;'></div>
+<div id='map'></div>
 
 <script>
-    var client_id = Date.now();
-
-    document.querySelector("#ws-id").textContent = client_id;
-    var ws = new WebSocket(`ws://localhost:8000/ws/${client_id}`);
-    ws.onmessage = function (event) {
-        var messages = document.getElementById('messages')
-        var message = document.createElement('li')
-
-        var msg_received = document.createTextNode(JSON.parse(event.data).message);
-
-        message.appendChild(msg_received)
-        messages.appendChild(message)
-
-        var marker = new maplibregl.Marker()
-            .setLngLat(JSON.parse(event.data).coordinate.split(','))
-            .addTo(map);
-
-        // for (var i = 0; i < coordinates.length; i++) {
-        //     var marker = new maplibregl.Marker()
-        //         .setLngLat(coordinates[i].split(','))
-        //         .addTo(map);
-        // }
-
-    };
-
-    function sendMessage(event) {
-        var input = document.getElementById("messageText")
-        ws.send(input.value)
-        input.value = ''
-        event.preventDefault()
-    }
-
     const map = new maplibregl.Map({
         container: 'map',
         style: {
@@ -76,14 +66,66 @@
             ]
         },
         center: [141.34867329542533, 43.0598172943666], // starting position [lng, lat]
-        zoom: 7 // starting zoom
+        zoom: 13 // starting zoom
     });
 
     map.addControl(new maplibregl.NavigationControl());
 
-    // var marker = new maplibregl.Marker()
-    //     .setLngLat([141.34867329542533, 43.0598172943666])
-    //     .addTo(map);
+    var client_id = Date.now();
+
+    document.querySelector("#ws-id").textContent = client_id;
+    var ws = new WebSocket(`ws://localhost:8000/ws/${client_id}`);
+
+
+    ws.onmessage = function (event) {
+        var messages = document.getElementById('messages');
+        var message = document.createElement('li');
+        var msg_received = document.createTextNode(JSON.parse(event.data).message);
+
+
+        message.appendChild(msg_received)
+        messages.appendChild(message)
+
+
+        // add markers to map
+        Object.keys(JSON.parse(event.data).markers).forEach((key, index) => {
+            console.log("key=" + key + ", index=" + index + ", value=" + JSON.parse(event.data).markers[key]);
+            var coordinate = JSON.parse(event.data).markers[key].coordinate
+            var marker_size = JSON.parse(event.data).markers[key].marker_size
+
+
+            if (document.getElementById(key)) {
+                document.getElementById(key).remove();
+            }
+
+            var el = document.createElement('div');
+            el.id = key
+
+            el.className = 'marker';
+            el.style.backgroundImage =
+                'url(https://placekitten.com/g/' +
+                marker_size + '/' + marker_size + '/)';
+            el.style.width = marker_size + 'px';
+            el.style.height = marker_size + 'px';
+
+            el.addEventListener('click', function () {
+                window.alert(key);
+            });
+
+            // add marker to map
+            new maplibregl.Marker(el)
+                .setLngLat(coordinate.split(','))
+                .addTo(map);
+        });
+
+    };
+
+    function sendMessage(event) {
+        var input = document.getElementById("messageText")
+        ws.send(input.value)
+        input.value = ''
+        event.preventDefault()
+    }
 </script>
 
 </body>

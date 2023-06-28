@@ -1,4 +1,5 @@
 from typing import List
+import random
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
@@ -16,6 +17,9 @@ class Coordinate(BaseModel):
 class ConnectionManager:
     def __init__(self):
         self.active_connections: List[WebSocket] = []
+        self.client_ids: list[int] = []
+        self.markers: dict = {}
+
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
@@ -28,10 +32,16 @@ class ConnectionManager:
         await websocket.send_text(message)
 
     async def broadcast(self, client_id: int, coordinate: str):
+        self.client_ids.append(client_id)
+        self.markers[client_id] = {
+            "coordinate": coordinate,
+            "marker_size": self.client_ids.index(client_id) + 40,
+        }
+
         for connection in self.active_connections:
             await connection.send_json({
-                "coordinate": coordinate,
-                "message": f"user {client_id}'s location: {coordinate}"
+                "message": f"user {client_id}'s location: {coordinate}",
+                "markers": self.markers
             })
 
 
