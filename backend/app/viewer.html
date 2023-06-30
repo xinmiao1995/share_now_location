@@ -17,6 +17,12 @@
             width: 100%;
         }
     </style>
+    <style>
+        #myDropdown {
+            width: 200px;
+            padding: 10px;
+        }
+    </style>
 </head>
 <body>
 <style>
@@ -29,12 +35,21 @@
     }
 </style>
 
-<h1>WebSocket Chat</h1>
+<h1>Where Am I in Sapporo</h1>
 <h2>Your ID: <span id="ws-id"></span></h2>
 
+
 <form action="" onsubmit="sendMessage(event)">
-    <input type="text" id="messageText" autocomplete="off"/>
-    <button>Send my location</button>
+    <select id="myDropdown">
+        <option value="">Choose My Location</option>
+        <option value="option1">テレビ塔</option>
+        <option value="option2">時計台</option>
+        <option value="option3">札幌駅</option>
+        <option value="option4">Associeレンタルスペース</option>
+        <option value="option5">中島公園</option>
+        <option value="option6">近代美術館</option>
+    </select>
+    <button>Send</button>
 </form>
 
 
@@ -44,6 +59,15 @@
 <div id='map'></div>
 
 <script>
+    var loc_coordinat = {
+        "option1": "141.3538497,43.0611086",
+        "option2": "141.3512027,43.0629821",
+        "option3": "141.35113642643597,43.0686946023698",
+        "option4": "141.3576215,43.06454",
+        "option5": "141.35451081847282,43.04515309937545",
+        "option6": " 141.33038906779382,43.060588292260945"
+    }
+
     const map = new maplibregl.Map({
         container: 'map',
         style: {
@@ -71,40 +95,35 @@
 
     map.addControl(new maplibregl.NavigationControl());
 
-    var client_id = Date.now();
 
+    let client_id = Date.now();
     document.querySelector("#ws-id").textContent = client_id;
-    var ws = new WebSocket(`ws://localhost:8000/ws/${client_id}`);
 
+    let hostName = location.hostname;
+    let ws = new WebSocket(`wss://${hostName}/ws/${client_id}`);
+
+    // var ws = new WebSocket(`ws://localhost:8000/ws/${client_id}`);
 
     ws.onmessage = function (event) {
-        var messages = document.getElementById('messages');
-        var message = document.createElement('li');
-        var msg_received = document.createTextNode(JSON.parse(event.data).message);
-
-
-        message.appendChild(msg_received)
-        messages.appendChild(message)
-
-
         // add markers to map
         Object.keys(JSON.parse(event.data).markers).forEach((key, index) => {
-            console.log("key=" + key + ", index=" + index + ", value=" + JSON.parse(event.data).markers[key]);
-            var coordinate = JSON.parse(event.data).markers[key].coordinate
-            var marker_size = JSON.parse(event.data).markers[key].marker_size
+            let coordinate = JSON.parse(event.data).markers[key].coordinate;
+            let marker_size = JSON.parse(event.data).markers[key].marker_size;
 
 
             if (document.getElementById(key)) {
                 document.getElementById(key).remove();
             }
 
-            var el = document.createElement('div');
-            el.id = key
+            let el = document.createElement('div');
+            el.id = key;
 
             el.className = 'marker';
             el.style.backgroundImage =
                 'url(https://placekitten.com/g/' +
                 marker_size + '/' + marker_size + '/)';
+            console.log('url(https://placekitten.com/g/' +
+                marker_size + '/' + marker_size + '/)');
             el.style.width = marker_size + 'px';
             el.style.height = marker_size + 'px';
 
@@ -117,13 +136,10 @@
                 .setLngLat(coordinate.split(','))
                 .addTo(map);
         });
-
     };
 
     function sendMessage(event) {
-        var input = document.getElementById("messageText")
-        ws.send(input.value)
-        input.value = ''
+        ws.send(loc_coordinat[document.getElementById("myDropdown").value])
         event.preventDefault()
     }
 </script>
