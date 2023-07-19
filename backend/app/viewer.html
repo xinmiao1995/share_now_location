@@ -57,11 +57,11 @@
 </ul>
 
 <div id='map'></div>
-
+<script src='https://unpkg.com/@turf/turf@6/turf.min.js'></script>
 <script>
     var loc_coordinat = {
         "option1": "141.3538497,43.0611086",
-        "option2": "141.3512027,43.0629821",
+        "option2": "141.353556,43.062558",
         "option3": "141.35113642643597,43.0686946023698",
         "option4": "141.3576215,43.06454",
         "option5": "141.35451081847282,43.04515309937545",
@@ -94,6 +94,8 @@
     });
 
     map.addControl(new maplibregl.NavigationControl());
+
+    var points = [];
 
 
     let client_id = Date.now();
@@ -135,6 +137,19 @@
             new maplibregl.Marker(el)
                 .setLngLat(coordinate.split(','))
                 .addTo(map);
+
+            points.push(coordinate.split(','));
+
+            // Create a GeoJSON FeatureCollection of points
+            const pointsCollection = turf.featureCollection(points.map(point => turf.point(point)));
+
+            const bbox = turf.bbox(pointsCollection);
+
+                map.fitBounds([
+                    [bbox[0], bbox[1]],
+                    [bbox[2], bbox[3]]
+                ]);
+
         });
     };
 
